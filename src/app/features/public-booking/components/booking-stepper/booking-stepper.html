@@ -1,0 +1,373 @@
+<!-- booking-stepper.component.html -->
+<div class=" sm:max-w-4xl mx-auto p-2 min-h-screen bg-gradient-to-br overflow-x-hidden">
+  <!-- Progress Header -->
+  <div class="mb-8">
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-2xl font-bold text-slate-800">Prenota la tua visita</h1>
+      <div class="text-sm text-slate-600">
+        Passo {{ currentStep() }} di {{ STEPS.length }}
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="w-full bg-slate-200 rounded-full h-2 mb-6">
+      <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-2 rounded-full transition-all duration-500 ease-out"
+        [style.width.%]="progressPercentage()"></div>
+    </div>
+
+    <!-- Step Navigation -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between relative gap-6 sm:gap-0">
+      @for (stepConfig of STEPS; track stepConfig.id; let i = $index) {
+      <div class="flex-1 flex items-center relative">
+        <!-- Step Circle -->
+        <button type="button" (click)="goToStep(stepConfig.id)" [disabled]="stepConfig.id > currentStep()"
+          class="w-12 h-12 flex items-center justify-center rounded-full font-semibold text-sm transition-all duration-300 relative z-10 focus:outline-none focus:ring-4 focus:ring-emerald-200"
+          [class]="getStepCircleClasses(stepConfig.id)">
+          @if (currentStep() > stepConfig.id) {
+          ✓
+          } @else {
+          {{ stepConfig.id }}
+          }
+        </button>
+
+        <!-- Step Label -->
+        <div class="ml-4 flex-1">
+          <div class="font-medium text-sm" [class]="getStepLabelClasses(stepConfig.id)">
+            {{ stepConfig.title }}
+          </div>
+          <div class="text-xs text-slate-500">{{ stepConfig.description }}</div>
+        </div>
+
+        <!-- Connection Line -->
+        @if (i < STEPS.length - 1) { <div
+          class="absolute top-6 left-12 w-full h-0.5 -z-10 transition-colors duration-300"
+          [class]="getConnectionLineClasses(stepConfig.id)">
+      </div>
+      }
+    </div>
+    }
+  </div>
+</div>
+
+<!-- Main Content Area -->
+<div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+  <!-- Step Content Header -->
+  <div class="bg-gradient-to-r from-emerald-500 to-teal-500 px-8 py-6 text-white">
+    <h2 class="text-xl font-semibold">{{ currentStepConfig().title }}</h2>
+    <p class="text-emerald-100 mt-1">{{ currentStepConfig().description }}</p>
+  </div>
+
+  <div class="p-8">
+    <!-- Step 1: Personal Information -->
+    @if (currentStep() === 1) {
+    <div class="space-y-6">
+      <form [formGroup]="personalForm" class="space-y-6">
+        <!-- Full Name -->
+        <div class="space-y-2">
+          <label for="fullName" class="block text-sm font-medium text-slate-700">
+            Nome e Cognome <span class="text-red-500">*</span>
+          </label>
+          <input id="fullName" formControlName="fullName" type="text" placeholder="Inserisci il tuo nome completo"
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+            [class]="getFieldInputClasses('personal.fullName')" />
+
+          <!-- Full Name error -->
+          @if (getFieldError('personal.fullName')) {
+          <div class="text-red-600 text-sm flex items-center mt-1">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"></path>
+            </svg>
+            {{ getFieldError('personal.fullName') }}
+          </div>
+          }
+        </div>
+
+        <!-- Email -->
+        <div class="space-y-2">
+          <label for="email" class="block text-sm font-medium text-slate-700">
+            Email <span class="text-red-500">*</span>
+          </label>
+          <input id="email" formControlName="email" type="email" placeholder="esempio@email.com"
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+            [class]="getFieldInputClasses('personal.email')" />
+
+          <!-- Email error -->
+          @if (getFieldError('personal.email')) {
+          <div class="text-red-600 text-sm flex items-center mt-1">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"></path>
+            </svg>
+            {{ getFieldError('personal.email') }}
+          </div>
+          }
+        </div>
+
+        <!-- Phone -->
+        <div class="space-y-2">
+          <label for="phone" class="block text-sm font-medium text-slate-700">
+            Telefono <span class="text-red-500">*</span>
+          </label>
+          <input id="phone" formControlName="phone" type="tel" placeholder="+39 123 456 7890"
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+            [class]="getFieldInputClasses('personal.phone')" />
+
+          <!-- Phone error -->
+          @if (getFieldError('personal.phone')) {
+          <div class="text-red-600 text-sm flex items-center mt-1">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"></path>
+            </svg>
+            {{ getFieldError('personal.phone') }}
+          </div>
+          }
+        </div>
+      </form>
+    </div>
+    }
+
+    <!-- Step 2: Booking Details -->
+    @if (currentStep() === 2) {
+    <div class="space-y-6">
+      <form [formGroup]="bookingFormGroup" class="space-y-6">
+        <!-- Visit Type -->
+        <div class="space-y-3">
+          <label class="block text-sm font-medium text-slate-700">
+            Tipo di visita <span class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @for (option of visitTypeOptions; track option.value) {
+            <label class="relative cursor-pointer">
+              <input type="radio" [value]="option.value" formControlName="visitType" class="sr-only peer" />
+              <div
+                class="p-4 border-2 border-slate-200 rounded-xl transition-all duration-200 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 hover:border-slate-300 hover:shadow-sm">
+                <div class="flex items-center space-x-3">
+                  <span class="text-2xl">{{ option.icon }}</span>
+                  <div class="flex-1">
+                    <div class="font-medium text-slate-800">{{ option.label }}</div>
+                    <div class="text-sm text-slate-600">{{ option.description }}</div>
+                  </div>
+                  <div
+                    class="w-5 h-5 border-2 border-slate-300 rounded-full peer-checked:border-emerald-500 peer-checked:bg-emerald-500 relative">
+                    <div
+                      class="w-2 h-2 bg-white rounded-full absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-0 peer-checked:opacity-100">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </label>
+            }
+          </div>
+
+          <!-- booking.visitType error -->
+          @if (getFieldError('booking.visitType')) {
+          <div class="text-red-600 text-sm flex items-center mt-1">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"></path>
+            </svg>
+            {{ getFieldError('booking.visitType') }}
+          </div>
+          }
+        </div>
+
+        <!-- Date -->
+        <div class="space-y-2">
+          <label for="date" class="block text-sm font-medium text-slate-700">
+            Data <span class="text-red-500">*</span>
+          </label>
+          <input id="date" formControlName="date" type="date" [min]="getTodayDate()"
+            class="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+            [class]="getFieldInputClasses('booking.date')" />
+
+          <!-- booking.date error -->
+          @if (getFieldError('booking.date')) {
+          <div class="text-red-600 text-sm flex items-center mt-1">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"></path>
+            </svg>
+            {{ getFieldError('booking.date') }}
+          </div>
+          }
+        </div>
+
+        <!-- Time Slots -->
+        <div class="space-y-3">
+          <label class="block text-sm font-medium text-slate-700">
+            Orario <span class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            @for (timeSlot of timeSlots; track timeSlot.value) {
+            <label class="relative cursor-pointer" [class]="getTimeSlotLabelClasses(timeSlot.available)">
+              <input type="radio" [value]="timeSlot.value" [disabled]="!timeSlot.available" formControlName="time"
+                class="sr-only peer" />
+              <div
+                class="p-3 text-center border-2 border-slate-200 rounded-lg transition-all duration-200 peer-disabled:cursor-not-allowed"
+                [class]="getTimeSlotClasses(timeSlot.available)">
+                <div class="font-medium text-sm">{{ timeSlot.label }}</div>
+              </div>
+            </label>
+            }
+          </div>
+
+          <!-- booking.time error -->
+          @if (getFieldError('booking.time')) {
+          <div class="text-red-600 text-sm flex items-center mt-1">
+            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd"></path>
+            </svg>
+            {{ getFieldError('booking.time') }}
+          </div>
+          }
+        </div>
+      </form>
+    </div>
+    }
+
+    <!-- Step 3: Confirmation -->
+    @if (currentStep() === 3) {
+    <div class="space-y-6">
+      <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6">
+        <div class="flex items-center mb-4">
+          <div class="w-12 sm:h-12 bg-emerald-500 rounded-full flex items-center justify-center text-white text-xl">
+            ✓
+          </div>
+          <div class="ml-4">
+            <h3 class="text-lg font-semibold text-emerald-800">Riepilogo della prenotazione</h3>
+            <p class="text-emerald-600">Controlla i dettagli prima di confermare</p>
+          </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Personal Info Summary -->
+          <div class="bg-white rounded-lg p-6 border border-slate-200 overflow-x-auto">
+            <h4 class="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <lucide-angular [img]="UserIcon" class="w-5 h-5 text-emerald-600" aria-hidden="true"></lucide-angular>
+
+              Dati Personali
+            </h4>
+            <div class="space-y-3">
+              <div class="flex gap-2">
+                <span class="text-slate-600">Nome:</span>
+                <span class="font-medium text-ellipsis">{{ personalForm.get('fullName')?.value || '-' }}</span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-slate-600">Email:</span>
+                <span class="font-medium text-ellipsis">{{ personalForm.get('email')?.value || '-' }}</span>
+              </div>
+              <div class="flex gap-2">
+                <span class="text-slate-600">Telefono:</span>
+                <span class="font-medium text-ellipsis">{{ personalForm.get('phone')?.value || '-' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Booking Info Summary -->
+          <div class="bg-white rounded-lg p-6 border border-slate-200 overflow-x-auto">
+            <h4 class="font-semibold text-slate-800 mb-4 flex items-center whitespace-nowrap gap-2">
+                <lucide-angular [img]="CalenarIcon" class="w-5 h-5 text-emerald-600" aria-hidden="true"></lucide-angular>
+
+              Dettagli Prenotazione
+            </h4>
+            <div class="space-y-3">
+              <div class="flex gap-2 whitespace-nowrap">
+                <span class="text-slate-600">Tipo visita:</span>
+                <span class="font-medium text-ellipsis">
+                  {{ getVisitTypeLabel(bookingFormGroup.get('visitType')?.value) }}
+                </span>
+              </div>
+              <div class="flex gap-2 whitespace-nowrap">
+                <span class="text-slate-600">Data:</span>
+                <span class="font-medium text-ellipsis">
+                  {{ formatDate(bookingFormGroup.get('date')?.value) }}
+                </span>
+              </div>
+              <div class="flex gap-2 whitespace-nowrap">
+                <span class="text-slate-600">Orario:</span>
+                <span class="font-medium text-ellipsis">{{ bookingFormGroup.get('time')?.value }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Important Notes -->
+        <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h5 class="font-medium text-blue-800 mb-2">Note importanti:</h5>
+          <ul class="text-sm text-blue-700 space-y-1">
+            <li>• Riceverai una conferma via email</li>
+            <li>• In caso di impedimento, avvisa almeno 24h prima</li>
+            <li>• Porta con te un documento di identità valido</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      @if (submitError()) {
+      <div class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center text-red-700">
+        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd"></path>
+        </svg>
+        {{ submitError() }}
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Navigation Buttons -->
+    <div class="flex flex-col sm:flex-row items-center justify-between pt-8 gap-3 sm:gap-0">
+      <!-- Back Button -->
+      @if (!isFirstStep()) {
+      <button type="button" (click)="previousStep()" [disabled]="isSubmitting()"
+        class="inline-flex items-center px-8 py-3 border border-slate-300 rounded-lg text-slate-700 bg-white hover:bg-slate-50 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+        Indietro
+      </button>
+      } @else {
+      <div></div>
+      }
+
+      <!-- Next/Submit Button -->
+      <button type="button" (click)="nextStep()" [disabled]="!canProceed() || isSubmitting()"
+        class="inline-flex items-center px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        [class]="getSubmitButtonClasses()">
+
+        <!-- Loading Spinner -->
+        @if (isSubmitting()) {
+        <svg class="w-4 h-4 mr-2 animate-spin" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
+        </svg>
+        {{ isConfirmationStep() ? 'Confermando...' : 'Caricamento...' }}
+        } @else {
+        {{ isConfirmationStep() ? 'Conferma Prenotazione' : 'Continua' }}
+        @if (!isConfirmationStep()) {
+        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+        </svg>
+        } @else {
+        <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+        </svg>
+        }
+        }
+      </button>
+    </div>
+  </div>
+</div>
