@@ -1,70 +1,73 @@
-import {
-  Component,
-  inject,
-  signal,
-  computed,
-  effect,
-} from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
   AbstractControl,
   ValidationErrors,
   ReactiveFormsModule,
-  Validators
+  Validators,
 } from '@angular/forms';
 import { z } from 'zod';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { Calendar, LucideAngularModule, User } from 'lucide-angular';
+import { LucideAngularModule } from 'lucide-angular';
+import { ConfirmationDialog } from 'app/shared/components/confirmation-dialog/confirmation-dialog';
+import { Dialog, DialogModule } from '@angular/cdk/dialog';
+import { DialogFormData } from './type';
 
 // Zod schemas for validation
 const PersonalInfoSchema = z.object({
-  fullName: z.string()
+  fullName: z
+    .string()
     .min(1, 'campo obbligatorio')
     .max(100, 'il campo è troppo lungo')
     .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, 'il campo contiene caratteri non validi'),
 
-  email: z.email('Email non valida')
+  email: z
+    .email('Email non valida')
     .min(1, 'campo obbligatorio')
     .max(254, 'il campo è troppo lungo'),
 
-  phone: z.string()
+  phone: z
+    .string()
     .min(1, 'campo obbligatorio')
     .regex(/^(?:\+39)?(?:3\d{8,9}|0\d{8,9})$/, 'Numero di telefono non valido')
-    .transform(val => val.replace(/\s+/g, '')) // Remove spaces
+    .transform((val) => val.replace(/\s+/g, '')), // Remove spaces
 });
 
 const BookingInfoSchema = z.object({
-  visitType: z.enum(['consultation', 'followup', 'emergency', 'routine'], {
-    message: 'Seleziona un tipo di visita valido'
+  visitType: z.enum(['first-visit-office', 'first-visit-online', 'periodic-checkup', 'sports-specialist'], {
+    message: 'Seleziona un tipo di visita valido',
   }),
 
-  date: z.string()
+  date: z
+    .string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data non valida')
-    .refine(dateStr => {
+    .refine((dateStr) => {
       const date = new Date(dateStr);
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       return date >= today;
     }, 'Seleziona una data a partire da oggi'),
 
-  time: z.string()
-    .regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Inserisci un orario valido (HH:MM)')
-    .refine(timeStr => {
+  time: z
+    .string()
+    .regex(
+      /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
+      'Inserisci un orario valido (HH:MM)'
+    )
+    .refine((timeStr) => {
       const [hours, minutes] = timeStr.split(':').map(Number);
       const totalMinutes = hours * 60 + minutes;
       return totalMinutes >= 9 * 60 && totalMinutes <= 17 * 60; // 9 AM to 5 PM
-    }, 'Orari disponibili: 09:00 - 17:00')
+    }, 'Orari disponibili: 09:00 - 17:00'),
 });
 
 const FullBookingSchema = z.object({
   personal: PersonalInfoSchema,
-  booking: BookingInfoSchema
+  booking: BookingInfoSchema,
 });
 
 // Type definitions
-type PersonalInfo = z.infer<typeof PersonalInfoSchema>;
-type BookingInfo = z.infer<typeof BookingInfoSchema>;
 type FullBooking = z.infer<typeof FullBookingSchema>;
 
 // Enhanced step configuration
@@ -86,7 +89,7 @@ function zodValidator<T>(schema: z.ZodSchema<T>) {
     if (result.success) return null;
 
     const errors: ValidationErrors = {};
-    result.error.issues.forEach(issue => {
+    result.error.issues.forEach((issue) => {
       const path = issue.path.join('.');
       errors[path || 'root'] = issue.message;
     });
@@ -98,15 +101,18 @@ function zodValidator<T>(schema: z.ZodSchema<T>) {
 @Component({
   selector: 'app-booking-stepper',
   standalone: true,
-  imports: [LucideAngularModule, ReactiveFormsModule],
+  imports: [
+    LucideAngularModule,
+    ReactiveFormsModule,
+    DialogModule,
+  ],
   templateUrl: './booking-stepper.html',
-  styleUrl: './booking-stepper.scss'
+  styleUrl: './booking-stepper.scss',
 })
 export class BookingStepper {
-  readonly CalenarIcon = Calendar;
-  readonly UserIcon = User;
   // Injected dependencies
   private readonly fb = inject(FormBuilder);
+  private readonly dialog = inject(Dialog);
 
   // Step configuration
   readonly STEPS: readonly StepConfig[] = [
@@ -115,22 +121,22 @@ export class BookingStepper {
       title: 'Informazioni personali',
       description: 'Fornisci i tuoi dati di contatto',
       formGroup: 'personal',
-      schema: PersonalInfoSchema
+      schema: PersonalInfoSchema,
     },
     {
       id: 2,
       title: 'Dettagli prenotazione',
       description: 'Seleziona tipo di visita, data e ora preferiti',
       formGroup: 'booking',
-      schema: BookingInfoSchema
+      schema: BookingInfoSchema,
     },
     {
       id: 3,
       title: 'Conferma',
       description: 'Controlla e conferma la tua prenotazione',
       formGroup: 'personal', // Not used for validation step
-      schema: z.any()
-    }
+      schema: z.any(),
+    },
   ] as const;
 
   // Reactive state
@@ -145,25 +151,48 @@ export class BookingStepper {
   // Form setup with enhanced validation
   bookingForm: FormGroup = this.fb.group({
     personal: this.fb.group({
-      fullName: ['', [Validators.required, zodValidator(PersonalInfoSchema.shape.fullName)]],
-      email: ['', [Validators.required, zodValidator(PersonalInfoSchema.shape.email)]],
-      phone: ['', [Validators.required, zodValidator(PersonalInfoSchema.shape.phone)]]
+      fullName: [
+        'Mario Rossi',
+        [Validators.required, zodValidator(PersonalInfoSchema.shape.fullName)],
+      ],
+      email: [
+        'mario.rossi@gmail.com',
+        [Validators.required, zodValidator(PersonalInfoSchema.shape.email)],
+      ],
+      phone: [
+        '3281438290',
+        [Validators.required, zodValidator(PersonalInfoSchema.shape.phone)],
+      ],
     }),
     booking: this.fb.group({
-      visitType: ['', [Validators.required, zodValidator(BookingInfoSchema.shape.visitType)]],
-      date: ['', [Validators.required, zodValidator(BookingInfoSchema.shape.date)]],
-      time: ['', [Validators.required, zodValidator(BookingInfoSchema.shape.time)]]
-    })
+      visitType: [
+        'first-visit-office',
+        [Validators.required, zodValidator(BookingInfoSchema.shape.visitType)],
+      ],
+      date: [
+        '2025-09-30',
+        [Validators.required, zodValidator(BookingInfoSchema.shape.date)],
+      ],
+      time: [
+        '09:30',
+        [Validators.required, zodValidator(BookingInfoSchema.shape.time)],
+      ],
+    }),
   });
 
   // Computed properties
-  readonly currentStepConfig = computed(() =>
-    this.STEPS.find(step => step.id === this.currentStep()) ?? this.STEPS[0]
+  readonly currentStepConfig = computed(
+    () =>
+      this.STEPS.find((step) => step.id === this.currentStep()) ?? this.STEPS[0]
   );
 
   readonly isFirstStep = computed(() => this.currentStep() === 1);
-  readonly isLastStep = computed(() => this.currentStep() === this.STEPS.length);
-  readonly isConfirmationStep = computed(() => this.currentStep() === this.STEPS.length);
+  readonly isLastStep = computed(
+    () => this.currentStep() === this.STEPS.length
+  );
+  readonly isConfirmationStep = computed(
+    () => this.currentStep() === this.STEPS.length
+  );
 
   readonly canProceed = computed(() => {
     const step = this.currentStepConfig();
@@ -194,8 +223,12 @@ export class BookingStepper {
   );
 
   // Form state getters for template
-  get personalForm(): FormGroup { return this.bookingForm.get('personal') as FormGroup; }
-  get bookingFormGroup(): FormGroup { return this.bookingForm.get('booking') as FormGroup; }
+  get personalForm(): FormGroup {
+    return this.bookingForm.get('personal') as FormGroup;
+  }
+  get bookingFormGroup(): FormGroup {
+    return this.bookingForm.get('booking') as FormGroup;
+  }
 
   constructor() {
     this.setupFormEffects();
@@ -206,9 +239,16 @@ export class BookingStepper {
       // set initial
       this.personalValid.set(personal.valid);
       (personal.valueChanges as any).pipe(debounceTime(200)).subscribe(() => {
-        Object.values(personal.controls).forEach(c => c.updateValueAndValidity({ emitEvent: false }));
+        Object.values(personal.controls).forEach((c) =>
+          c.updateValueAndValidity({ emitEvent: false })
+        );
         this.personalValid.set(personal.valid);
-        console.log('personal validity', personal.valid, personal.errors, personal.value);
+        console.log(
+          'personal validity',
+          personal.valid,
+          personal.errors,
+          personal.value
+        );
       });
     }
 
@@ -217,9 +257,16 @@ export class BookingStepper {
       // set initial
       this.bookingValid.set(booking.valid);
       (booking.valueChanges as any).pipe(debounceTime(200)).subscribe(() => {
-        Object.values(booking.controls).forEach(c => c.updateValueAndValidity({ emitEvent: false }));
+        Object.values(booking.controls).forEach((c) =>
+          c.updateValueAndValidity({ emitEvent: false })
+        );
         this.bookingValid.set(booking.valid);
-        console.log('booking validity', booking.valid, booking.errors, booking.value);
+        console.log(
+          'booking validity',
+          booking.valid,
+          booking.errors,
+          booking.value
+        );
       });
     }
   }
@@ -240,11 +287,11 @@ export class BookingStepper {
       return;
     }
 
-    this.currentStep.update(step => Math.min(step + 1, this.STEPS.length));
+    this.currentStep.update((step) => Math.min(step + 1, this.STEPS.length));
   }
 
   previousStep(): void {
-    this.currentStep.update(step => Math.max(step - 1, 1));
+    this.currentStep.update((step) => Math.max(step - 1, 1));
   }
 
   goToStep(stepNumber: number): void {
@@ -277,9 +324,7 @@ export class BookingStepper {
       // - Send confirmation email/WhatsApp
       // - Redirect to success page
 
-      // Reset form after successful submission
-      this.resetForm();
-
+      this.openConfirmationDialog();
     } catch (error) {
       this.submitError.set(
         error instanceof Error ? error.message : 'An unexpected error occurred'
@@ -289,6 +334,35 @@ export class BookingStepper {
     }
   }
 
+  private openConfirmationDialog(): void {
+    const dialogRef = this.dialog.open(ConfirmationDialog, {
+      disableClose: true,
+      data: {
+        title: 'Prenotazione Confermata',
+        message:
+          'La tua prenotazione è stata effettuata con successo. Di seguito i dettagli della tua prenotazione.',
+        confirmButtonLabel: 'Nuova Prenotazione',
+        extraInfos: this.mapFormDataForDialog(),
+      },
+    });
+
+    dialogRef.closed.subscribe(() => {
+      this.resetForm();
+    });
+  }
+
+  private mapFormDataForDialog(): DialogFormData | null {
+    const data = this.formData();
+    if (!data) return null;
+    return {
+      date: this.formatDate(data.booking.date),
+      time: data.booking.time,
+      visitType: this.getVisitTypeLabel(data.booking.visitType),
+      email: data.personal.email,
+      phone: data.personal.phone,
+
+    };
+  }
   // Utility methods
   private markCurrentStepAsTouched(): void {
     const step = this.currentStepConfig();
@@ -299,11 +373,8 @@ export class BookingStepper {
   private setupFormChangeHandling(): void {
     // Auto-save form data on changes with debounce
     this.bookingForm.valueChanges
-      .pipe(
-        debounceTime(1000),
-        distinctUntilChanged(),
-      )
-      .subscribe(value => {
+      .pipe(debounceTime(1000), distinctUntilChanged())
+      .subscribe((value) => {
         // Auto-save to localStorage or sessionStorage
         this.autoSaveFormData(value);
       });
@@ -338,7 +409,7 @@ export class BookingStepper {
 
   private async mockApiSubmission(data: FullBooking): Promise<void> {
     // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Simulate occasional API errors (10% chance)
     if (Math.random() < 0.1) {
@@ -350,7 +421,9 @@ export class BookingStepper {
   getFieldError(controlPath: string): string | null {
     const c = this.bookingForm.get(controlPath);
     if (!c?.touched || !c.errors) return null;
-    return c.errors['required'] ? 'campo obbligatorio' : c.errors['root'] ?? null;
+    return c.errors['required']
+      ? 'campo obbligatorio'
+      : c.errors['root'] ?? null;
   }
 
   isFieldInvalid(controlPath: string): boolean {
@@ -398,18 +471,12 @@ export class BookingStepper {
       : 'border-slate-100 bg-slate-50 text-slate-400';
   }
 
-  getSubmitButtonClasses(): string {
-    return this.isConfirmationStep()
-      ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
-      : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600';
-  }
-
   getTodayDate(): string {
     return new Date().toISOString().split('T')[0];
   }
 
   getVisitTypeLabel(value: string): string {
-    const option = this.visitTypeOptions.find(opt => opt.value === value);
+    const option = this.visitTypeOptions.find((opt) => opt.value === value);
     return option ? option.label : value || '-';
   }
 
@@ -420,10 +487,30 @@ export class BookingStepper {
   }
 
   readonly visitTypeOptions = [
-    { value: 'consultation', label: 'Prima visita', icon: '🏥', description: 'Prima consultazione medica' },
-    { value: 'followup', label: 'Controllo', icon: '📋', description: 'Visita di controllo' },
-    { value: 'emergency', label: 'Urgente', icon: '🚨', description: 'Visita urgente' },
-    { value: 'routine', label: 'Routine', icon: '✅', description: 'Controllo di routine' }
+    {
+      value: 'first-visit-office',
+      label: 'Prima visita in studio',
+      description:
+        'Prima consultazione medica presso lo studio della dottoressa con anamnesi dettagliata',
+    },
+    {
+      value: 'first-visit-online',
+      label: 'Prima visita online',
+      description:
+        'Prima consultazione medica tramite videocall per valutazione iniziale e consulenza a distanza',
+    },
+    {
+      value: 'periodic-checkup',
+      label: 'Controllo periodico',
+      description:
+        'Visita di controllo programmata per monitorare condizioni esistenti e valutare progressi terapeutici',
+    },
+    {
+      value: 'sports-specialist',
+      label: 'Visita specialistica sportiva',
+      description:
+        'Valutazione medico-sportiva specializzata per atleti con focus su performance e prevenzione infortuni',
+    },
   ] as const;
 
   readonly timeSlots = [
@@ -440,6 +527,6 @@ export class BookingStepper {
     { value: '15:30', label: '15:30', available: false },
     { value: '16:00', label: '16:00', available: true },
     { value: '16:30', label: '16:30', available: true },
-    { value: '17:00', label: '17:00', available: true }
+    { value: '17:00', label: '17:00', available: true },
   ] as const;
 }
