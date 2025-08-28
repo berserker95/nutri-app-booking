@@ -102,12 +102,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - GitHub: [@berserker95](https://github.com/berserker95)
 - LinkedIn: [Giovanni Albano](https://linkedin.com/in/giovannialbano1995)
 
-## 🙏 Acknowledgments
-
-- Angular team for the amazing framework
-- Tailwind CSS for the utility-first approach
-- Zod for excellent validation capabilities
-
 ---
 
 <div align="center">
