@@ -107,7 +107,6 @@ function zodValidator<T>(schema: z.ZodSchema<T>) {
     DialogModule,
   ],
   templateUrl: './booking-stepper.html',
-  styleUrl: './booking-stepper.scss',
 })
 export class BookingStepper {
   // Injected dependencies
@@ -232,43 +231,8 @@ export class BookingStepper {
 
   constructor() {
     this.setupFormEffects();
-
-    // Keep form control validity up-to-date when user types
-    const personal = this.bookingForm.get('personal') as FormGroup | null;
-    if (personal) {
-      // set initial
-      this.personalValid.set(personal.valid);
-      (personal.valueChanges as any).pipe(debounceTime(200)).subscribe(() => {
-        Object.values(personal.controls).forEach((c) =>
-          c.updateValueAndValidity({ emitEvent: false })
-        );
-        this.personalValid.set(personal.valid);
-        console.log(
-          'personal validity',
-          personal.valid,
-          personal.errors,
-          personal.value
-        );
-      });
-    }
-
-    const booking = this.bookingForm.get('booking') as FormGroup | null;
-    if (booking) {
-      // set initial
-      this.bookingValid.set(booking.valid);
-      (booking.valueChanges as any).pipe(debounceTime(200)).subscribe(() => {
-        Object.values(booking.controls).forEach((c) =>
-          c.updateValueAndValidity({ emitEvent: false })
-        );
-        this.bookingValid.set(booking.valid);
-        console.log(
-          'booking validity',
-          booking.valid,
-          booking.errors,
-          booking.value
-        );
-      });
-    }
+    this.updateTimeSlotControl();
+    this.setupFormValueChanges()
   }
 
   ngOnInit(): void {
@@ -317,8 +281,6 @@ export class BookingStepper {
     try {
       // Simulate API call
       await this.mockApiSubmission(formData);
-
-      console.log('Booking confirmed:', formData);
       // TODO: Implement actual submission logic
       // - Send to API
       // - Send confirmation email/WhatsApp
@@ -389,12 +351,47 @@ export class BookingStepper {
     });
   }
 
+  private setupFormValueChanges(): void {
+    // Keep form control validity up-to-date when user types
+    const personal = this.bookingForm.get('personal') as FormGroup | null;
+    if (personal) {
+      // set initial
+      this.personalValid.set(personal.valid);
+      (personal.valueChanges as any).pipe(debounceTime(200)).subscribe(() => {
+        Object.values(personal.controls).forEach((c) =>
+          c.updateValueAndValidity({ emitEvent: false })
+        );
+        this.personalValid.set(personal.valid);
+      });
+    }
+
+    const booking = this.bookingForm.get('booking') as FormGroup | null;
+    if (booking) {
+      // set initial
+      this.bookingValid.set(booking.valid);
+      (booking.valueChanges as any).pipe(debounceTime(200)).subscribe(() => {
+        Object.values(booking.controls).forEach((c) =>
+          c.updateValueAndValidity({ emitEvent: false })
+        );
+        this.bookingValid.set(booking.valid);
+      });
+    }
+  }
+
+    private updateTimeSlotControl() {
+    const timeControl = this.bookingForm.get('booking.time');
+    if (!timeControl) return;
+    // se il valore corrente non è disponibile lo resetto
+    if (!this.timeSlots.find(ts => ts.value === timeControl.value && ts.available)) {
+      timeControl.setValue(null);
+    }
+  }
+
   private autoSaveFormData(data: any): void {
     try {
       // Note: In Claude artifacts, we use in-memory storage instead of localStorage
       // In a real application, you would use:
       // localStorage.setItem('booking-form-draft', JSON.stringify(data));
-      console.log('Auto-saved form data:', data);
     } catch (error) {
       console.warn('Failed to auto-save form data:', error);
     }
@@ -405,6 +402,7 @@ export class BookingStepper {
     this.currentStep.set(1);
     this.isSubmitting.set(false);
     this.submitError.set(null);
+    this.updateTimeSlotControl();
   }
 
   private async mockApiSubmission(data: FullBooking): Promise<void> {
@@ -468,7 +466,7 @@ export class BookingStepper {
   getTimeSlotClasses(available: boolean): string {
     return available
       ? 'peer-checked:border-emerald-500 peer-checked:bg-emerald-50 hover:border-slate-300'
-      : 'border-slate-100 bg-slate-50 text-slate-400';
+      : 'border-slate-100 bg-slate-50 text-slate-400 cursor-not-allowed';
   }
 
   getTodayDate(): string {

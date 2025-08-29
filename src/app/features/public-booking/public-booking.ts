@@ -7,7 +7,6 @@ import { BookingStepper } from './components/booking-stepper/booking-stepper';
   selector: 'app-public-booking',
   imports: [LucideAngularModule, BookingStepper],
   templateUrl: './public-booking.html',
-  styleUrl: './public-booking.scss'
 })
 export class PublicBooking {
   readonly UserIcon = User;

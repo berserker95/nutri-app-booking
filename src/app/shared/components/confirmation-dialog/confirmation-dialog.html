@@ -4,27 +4,28 @@
     <div class="w-full shadow-strong">
         <div class="text-center p-4">
             <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <lucide-angular name="circle-check" class="h-8 w-8 text-white" aria-hidden="true"></lucide-angular>
+                <lucide-angular name="circle-check" class="h-8 w-8 text-white" aria-hidden="true"
+                    [attr.aria-label]="'Operazione completata con successo'" role="img"></lucide-angular>
             </div>
-            <h2 class="text-2xl font-bold mb-2">
+            <h2 class="text-2xl font-bold mb-2" id="dialog-title">
                 {{data.title}}
             </h2>
-            <p class="text-slate-500 mb-6">
+            <p class="text-slate-500 mb-6" id="dialog-description">
                 {{data.message}}
             </p>
             @if(data.extraInfos) {
             @let formData = data.extraInfos;
-            <div class="bg-slate-200/50 p-4 rounded-lg text-left space-y-2">
+            <div class="bg-gray-50 border border-gray-200 p-6 rounded-xl text-left space-y-4 mb-8 shadow-sm" id="dialog-form-data">
                 <p><strong>Data:</strong> {{formData.date}}</p>
                 <p><strong>Orario:</strong> {{formData.time}}</p>
                 <p><strong>Tipo:</strong> {{formData.visitType}}</p>
                 <p><strong>Email:</strong> {{formData.email}}</p>
-                 <p><strong>Telefono:</strong> {{formData.phone}}</p>
+                <p><strong>Telefono:</strong> {{formData.phone}}</p>
             </div>
             }
 
             <button type="button" (click)="onClose()"
-                class="mt-6 inline-flex items-center px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600">
+                class="mt-6 inline-flex items-center px-8 py-3 rounded-lg font-medium text-white transition-all duration-200 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"  [attr.aria-label]="data.confirmButtonLabel">
                 {{data.confirmButtonLabel}}
             </button>
         </div>
