@@ -7,8 +7,11 @@ import { ConfirmationDialogData } from './type';
   selector: 'app-confirmation-dialog',
   imports: [LucideAngularModule],
   templateUrl: './confirmation-dialog.html',
-  styleUrl: './confirmation-dialog.scss',
-  host: { class: 'block bg-white p-6 rounded-lg shadow-lg sm:max-w-lg max-w-sm'}
+  host: {
+    'class': 'block bg-white p-6 rounded-lg shadow-lg sm:max-w-lg max-w-sm', 'role': 'dialog',
+    'aria-modal': 'true',
+    'aria-labelledby': 'dialog-title'
+  }
 })
 export class ConfirmationDialog {
   readonly #dialogRef = inject(DialogRef<boolean>);
